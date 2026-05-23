@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PageSage 路演演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F5;--surface:#FFF;--border:#E4E7ED;
+  --text:#1A1A2E;--text-secondary:#5A5A7A;--text-hint:#9A9AB0;
+  --primary:#1976D2;--primary-light:#63A4FF;--primary-dark:#004BA0;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg:0 10px 30px rgba(0,0,0,0.10),0 4px 8px rgba(0,0,0,0.06);
+  --radius:12px;
+}
+body{font-family:'Inter','Roboto',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 24px;background:var(--surface);
+  border-bottom:1px solid var(--border);height:56px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+.topbar-logo{display:flex;align-items:center;gap:8px}
+.topbar-logo svg{width:24px;height:24px;fill:var(--primary)}
+.topbar h1{font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.topbar-badge{
+  font-size:11px;font-weight:600;padding:2px 10px;
+  border-radius:20px;background:#E8F5E9;color:#2E7D32;
+  margin-left:4px;
+}
+.topbar-right{margin-left:auto;font-size:13px;color:var(--text-secondary)}
+.main{display:flex;height:calc(100vh - 56px);gap:0}
+.article-panel{flex:1;display:flex;flex-direction:column;min-width:0}
+.article-header{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.article-header h2{font-size:14px;font-weight:500;color:var(--text)}
+.article-badge{
+  font-size:11px;padding:2px 10px;border-radius:20px;
+  background:#E3F2FD;color:var(--primary);font-weight:500;
+}
+.article-frame{flex:1;border:none;width:100%;background:#FFF}
+.side-panel{
+  width:420px;flex-shrink:0;
+  background:var(--bg);overflow-y:auto;
+  border-left:1px solid var(--border);
+  padding:16px;
+}
+/* === 侧边栏内部样式（与扩展一致） === */
+.panel-header{
+  display:flex;align-items:center;gap:10px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;
+}
+.panel-header svg{width:26px;height:26px;fill:var(--primary)}
+.panel-header h3{font-size:16px;font-weight:500;color:var(--text);letter-spacing:0.01em}
+.demo-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:12px 24px;font-size:14px;font-weight:500;
+  font-family:inherit;line-height:1;border:none;border-radius:8px;
+  cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);
+  background:var(--primary);color:#FFF;box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.demo-btn:hover{background:var(--primary-dark);box-shadow:var(--shadow-lg)}
+.demo-btn:active{transform:scale(0.98)}
+.demo-btn:disabled{background:var(--border);color:var(--text-hint);cursor:not-allowed;transform:none}
+.demo-btn svg{width:18px;height:18px;fill:currentColor;flex-shrink:0}
+.demo-status{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;margin:12px 0;border-radius:12px;
+  font-size:13px;line-height:1.4;min-height:40px;
+  transition:all 0.3s;opacity:0;transform:translateY(-4px);
+  pointer-events:none;
+}
+.demo-status.show{opacity:1;transform:translateY(0)}
+.demo-status.loading{background:#E3F2FD;color:var(--primary)}
+.demo-status.success{background:#E8F5E9;color:#2E7D32}
+.demo-spinner{
+  width:16px;height:16px;border:2px solid currentColor;
+  border-right-color:transparent;border-radius:50%;
+  animation:dspin 0.7s linear infinite;flex-shrink:0;
+}
+@keyframes dspin{to{transform:rotate(360deg)}}
+.demo-result{display:none}
+.demo-result.show{display:block}
+.card{
+  background:var(--surface);border-radius:12px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.10);
+  padding:18px;margin-bottom:14px;
+  opacity:0;transform:translateY(20px);transition:all 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.card.visible{opacity:1;transform:translateY(0)}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card-header svg{width:18px;height:18px;flex-shrink:0;fill:#1976D2}
+.card-title{font-size:14px;font-weight:500;color:var(--text)}
+.card-body{color:var(--text-secondary);font-size:13px;line-height:1.7}
+.thesis-text{
+  font-size:14px;font-weight:500;color:var(--primary-dark);
+  padding:12px 14px;background:#E3F2FD;border-radius:8px;line-height:1.6;
+}
+.evidence-text{line-height:1.7}
+.conclusion-text{font-style:italic;line-height:1.7}
+.argument-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.argument-item:first-child{padding-top:0}
+.argument-item:last-child{padding-bottom:0;border-bottom:none}
+.argument-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:var(--primary);
+  color:#FFF;font-size:11px;font-weight:500;margin-right:6px;flex-shrink:0;
+}
+.argument-header{display:flex;align-items:flex-start;gap:4px;margin-bottom:4px}
+.argument-text{font-size:13px;font-weight:500;color:var(--text);flex:1}
+.original-quote{
+  font-size:12px;color:var(--text-hint);padding:6px 10px;
+  background:#FAFAFA;border-left:3px solid var(--primary-light);
+  border-radius:4px;margin-top:4px;line-height:1.5;
+}
+.original-quote::before{content:"📝 ";font-size:11px}
+.terms-wrap{display:flex;flex-wrap:wrap;gap:4px}
+.term-item{
+  display:inline-flex;flex-direction:column;
+  background:#FAFAFA;border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;margin:2px;transition:border-color 0.15s;
+}
+.term-item:hover{border-color:var(--primary-light);background:#F5F8FF}
+.term-name{font-weight:500;color:var(--text);font-size:13px}
+.term-en{font-size:11px;color:var(--text-hint);font-style:italic;margin-top:1px}
+.term-def{font-size:12px;color:var(--text-secondary);margin-top:3px;line-height:1.5}
+.reading-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:8px;
+}
+.reading-badge.deep{background:#E8F5E9;color:#2E7D32}
+.reading-badge.skip{background:#FFF3E0;color:#E65100}
+.reading-reason{font-size:13px;color:var(--text-secondary);margin-bottom:8px;line-height:1.6}
+.highlight-item{
+  font-size:12px;color:var(--primary);padding:5px 10px;
+  background:#E3F2FD;border-radius:6px;margin:3px 0;line-height:1.5;
+}
+.highlight-item::before{content:"› ";font-weight:bold}
+.article-type-badge{
+  display:inline-block;padding:2px 10px;border-radius:12px;
+  font-size:11px;font-weight:500;margin-top:10px;
+  color:var(--text-hint);border:1px solid var(--border);
+}
+.tokens-info{
+  text-align:center;font-size:11px;color:var(--text-hint);margin:6px 0 14px;
+  transition:opacity 0.5s;opacity:0;
+}
+.tokens-info.show{opacity:1}
+.empty-panel{
+  text-align:center;padding:32px 16px;color:var(--text-hint);
+}
+.empty-panel svg{width:44px;height:44px;fill:var(--text-hint);opacity:0.3;margin-bottom:10px}
+.empty-panel-text{font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    <h1>PageSage</h1>
+    <span class="topbar-badge">路演演示</span>
+  </div>
+  <div class="topbar-right">长文结构化总结 · Demo</div>
+</div>
+
+<div class="main">
+
+  <!-- 左侧：文章 -->
+  <div class="article-panel">
+    <div class="article-header">
+      <h2>示例文章</h2>
+      <span class="article-badge">原文约 8,200 字</span>
+    </div>
+    <iframe class="article-frame" id="articleFrame" srcdoc=""></iframe>
+  </div>
+
+  <!-- 右侧：总结面板 -->
+  <div class="side-panel">
+    <div class="panel-header">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <h3>AI 文章总结</h3>
+    </div>
+
+    <button class="demo-btn" id="demoBtn">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      演示总结
+    </button>
+
+    <div class="demo-status" id="demoStatus">
+      <div class="demo-spinner"></div>
+      <span id="demoStatusText">准备就绪</span>
+    </div>
+
+    <div class="demo-result" id="demoResult">
+
+      <div class="card" id="cardThesis">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span class="card-title">核心论点</span>
+        </div>
+        <div class="card-body"><div class="thesis-text" id="rThesis"></div></div>
+      </div>
+
+      <div class="card" id="cardArgs">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+          <span class="card-title">关键论点</span>
+        </div>
+        <div class="card-body" id="rArgs"></div>
+      </div>
+
+      <div class="card" id="cardEvidence">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <span class="card-title">论据与数据</span>
+        </div>
+        <div class="card-body"><div class="evidence-text" id="rEvidence"></div></div>
+      </div>
+
+      <div class="card" id="cardConclusion">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span class="card-title">结论与展望</span>
+        </div>
+        <div class="card-body"><div class="conclusion-text" id="rConclusion"></div></div>
+      </div>
+
+      <div class="card" id="cardTerms">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+          <span class="card-title">专业术语</span>
+        </div>
+        <div class="card-body"><div class="terms-wrap" id="rTerms"></div></div>
+      </div>
+
+      <div class="card" id="cardReading">
+        <div class="card-header">
+          <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          <span class="card-title">阅读建议</span>
+        </div>
+        <div class="card-body" id="rReading"></div>
+      </div>
+
+      <div class="tokens-info" id="rTokens"></div>
+    </div>
+
+    <div class="empty-panel" id="emptyPanel">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M11 12h2v2h-2zm0-6h2v4h-2z"/></svg>
+      <div class="empty-panel-text">点击"演示总结"按钮，<br/>查看 AI 自动生成的结构化总结。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 1. 示例文章（内嵌到 iframe 的 srcdoc）
+// ============================================================
+const SAMPLE_ARTICLE = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>大语言模型与人机交互的未来</title>
+<style>
+  body{font-family:Georgia,'Times New Roman',serif;max-width:720px;margin:40px auto;padding:0 24px;color:#222;line-height:1.8;font-size:15px}
+  h1{font-size:26px;font-weight:700;line-height:1.3;margin-bottom:8px;color:#111}
+  .meta{color:#888;font-size:13px;margin-bottom:24px;font-family:sans-serif}
+  h2{font-size:20px;margin-top:32px;margin-bottom:12px;color:#222}
+  p{margin-bottom:16px;text-indent:2em}
+  blockquote{border-left:3px solid #1976D2;margin:16px 0;padding:8px 20px;background:#F5F8FF;color:#333;font-style:italic}
+  blockquote p{text-indent:0;margin:4px 0}
+  ul{margin:12px 0 16px 24px}
+  li{margin-bottom:6px}
+  .highlight{background:#FFFDE7;padding:1px 4px;border-radius:2px}
+</style></head>
+<body>
+
+<h1>从 GUI 到 CUI：大语言模型如何重塑人机交互的底层逻辑</h1>
+<div class="meta">作者：张益达 &nbsp;|&nbsp; 2026年5月 &nbsp;|&nbsp; 预计阅读时间：20 分钟</div>
+
+<p>1995 年，Windows 95 的发布标志着图形用户界面（GUI）成为人机交互的主流范式。在此后的三十年里，鼠标点击、窗口拖拽、菜单选择成为我们与数字世界沟通的主要方式。然而，2022 年底 ChatGPT 的横空出世，让人们看到了另一种可能——用自然语言直接与机器对话。这不仅仅是交互方式的进化，更可能是一场底层范式的革命。</p>
+
+<h2>对话式交互：为什么是现在？</h2>
+
+<p>对话式用户界面（Conversational UI, CUI）的概念并不新鲜。早在 1960 年代，ELIZA 聊天程序就展示了人机对话的可能性。但过去六十多年里，CUI 始终未能成为主流，原因很简单：技术不够好。传统的规则式对话系统僵硬、易错，用户很快会碰壁。</p>
+
+<p>大语言模型（LLM）的出现彻底改变了这一局面。以 GPT-4、Claude、Qwen 为代表的 LLM 能够理解复杂的上下文、处理歧义、生成流畅的自然语言回复。更重要的是，<span class="highlight">用户不再需要学习复杂的软件操作，只需用自然语言描述需求</span>——这扇门一旦打开，就再也关不上了。</p>
+
+<blockquote><p>用户不再需要学习复杂的软件操作，只需用自然语言描述需求</p></blockquote>
+
+<p>Gartner 在 2025 年的一份报告中预测，到 2027 年，40% 的人机交互将基于对话式 AI。OpenAI 的 ChatGPT 在两个月内达到 1 亿用户，成为历史上增长最快的消费级应用。Microsoft 将 Copilot 深度集成到 Office 365、Windows 和 Azure 中；Google 推出了 Bard（现为 Gemini）并整合到搜索、Gmail 和 Docs 中；阿里通义千问也正在全线嵌入钉钉、淘宝和企业级产品中。这些都不是偶然的跟风，而是对同一个趋势的集体判断：对话式交互将成为下一代人机交互的核心范式。</p>
+
+<h2>CUI 的三大核心优势</h2>
+
+<p>与 GUI 相比，CUI 具备三个根本性的优势。</p>
+
+<p><strong>第一，零学习成本。</strong> GUI 要求用户理解界面隐喻——文件夹、菜单、工具栏、右键菜单——每一个都需要学习。而 CUI 只需要用户能用自然语言表达意图。这意味着从未使用过电脑的人也能通过语音或文字直接完成复杂任务。对于老年人和数字弱势群体，这可能是最具包容性的技术革新。</p>
+
+<p><strong>第二，任务表达能力强。</strong> 很多操作在 GUI 中需要多步完成。例如，"找出上个月所有来自华东区、金额超过 10 万的订单，按日期排序并画一张趋势图"——在 GUI 中可能需要十几个点击和拖拽操作；在 CUI 中，一句话就够了。LLM 能够将复杂的意图分解为多个子任务并依次执行，这是传统 GUI 难以企及的。</p>
+
+<p><strong>第三，上下文连续性。</strong> GUI 通常是无状态的——每次操作都是独立的。CUI 则天然支持多轮对话，AI 能够记住前文说过的话，在后续交互中引用。这使得复杂的工作流可以被拆解成多个步骤，逐步完善，而不是一次性完成所有配置。</p>
+
+<h2>LLM 作为操作系统级入口</h2>
+
+<p>2024 年以来，一个更激进的趋势正在浮现：LLM 正在从应用层渗透到操作系统层。</p>
+
+<p>Microsoft Windows 11 的 Copilot 可以通过自然语言直接控制系统设置、启动应用程序、管理文件。Apple 的 Siri 接入 Apple Intelligence 后获得了更强的上下文理解能力。国内的阿里、百度、华为也纷纷将 AI 助手定位为"下一代操作系统的交互入口"。</p>
+
+<p><span class="highlight">未来操作系统将内置 AI 助手，应用程序通过自然语言 API 被调用</span>——这意味着，传统 GUI 应用可能会退居二线，成为 AI 助手的"后端引擎"。用户不再需要手动打开 Excel 做数据透视表，而是告诉 AI："帮我分析一下销售数据，看看哪个地区的增长最快。"</p>
+
+<blockquote><p>未来操作系统将内置 AI 助手，应用程序通过自然语言 API 被调用</p></blockquote>
+
+<p>这种转变对软件开发的影响是深远的。开发者不仅要考虑 GUI 的设计，还要思考如何让 AI 理解自己应用的能力——即"AI 可发现性"（AI discoverability）。类似于传统 Web 开发中的 SEO，未来可能会出现"应用语义发现"（App SEO），让 AI 助手能够理解和调用第三方应用的功能。</p>
+
+<h2>隐私、安全与信任挑战</h2>
+
+<p>然而，CUI 的普及也带来了新的问题。对话式交互意味着用户的意图、数据、偏好需要被 AI 实时理解和分析。<span class="highlight">对话式交互意味着用户数据需要被实时分析和理解</span>——这比传统 GUI 中的被动数据收集要深入得多。</p>
+
+<blockquote><p>对话式交互意味着用户数据需要被实时分析和理解</p></blockquote>
+
+<p>传统的 GUI 应用中，用户的每次操作是离散的、低语义的（点击、拖拽、输入），很难从中推断出用户的高层意图。而 CUI 中，用户直接表达意图——"我想买一辆 20 万以内的新能源车"——这句话本身就包含了预算、车型、动力类型等敏感信息。如何确保这些数据不被滥用，是每一个 CUI 平台必须回答的问题。</p>
+
+<p>此外，LLM 的"幻觉"问题（hallucination）在对话式交互中被放大。当用户信任 AI 给出的答案时，错误的信息可能导致严重的后果。医疗、金融、法律等高风险领域的 CUI 应用需要额外的安全护栏——包括实时的事实核查、来源引用、以及人类在环（Human-in-the-Loop）的审核机制。</p>
+
+<h2>企业如何准备迎接 CUI 时代</h2>
+
+<p>对于企业而言，CUI 时代的到来既是机遇也是挑战。以下三个方向值得关注：</p>
+
+<ul>
+  <li><strong>重构产品交互层</strong>：在产品中引入对话式入口，让用户可以通过自然语言完成核心操作。不必一步到位，可以先从 FAQ、客服等低风险场景切入。</li>
+  <li><strong>建立 AI 可发现性体系</strong>：确保 AI 能够理解你的产品功能。这包括编写 API 的语义描述、为功能点打标签、建立功能调用图谱。</li>
+  <li><strong>投资数据治理</strong>：CUI 产生的数据量巨大且高度语义化，企业需要建立从数据收集、存储、分析到删除的完整治理框架。</li>
+</ul>
+
+<h2>结论：共存而非取代</h2>
+
+<p>回顾历史，命令行界面（CLI）到图形界面（GUI）的转变用了几十年。GUI 并没有完全取代 CLI——程序员仍然大量使用终端。同样，CUI 也不会完全取代 GUI。两者各有优劣：GUI 在精确操作、数据展示、空间布局方面具有天然优势；CUI 则在意图表达、复杂任务分解、个性化交互方面表现出色。</p>
+
+<p>最终的未来不是 CUI 替代 GUI，而是两者的深度融合。未来的应用将同时提供图形界面和对话界面，用户可以根据任务的性质自由选择。而优秀的 AI 助手将能够在这两种模式间无缝切换——当你需要它操作表格时，它操作表格（GUI）；当你需要它分析趋势时，它和你对话（CUI）。</p>
+
+<p>这才是人机交互的真正未来。</p>
+
+</body></html>`;
+
+document.getElementById('articleFrame').srcdoc = SAMPLE_ARTICLE;
+
+// ============================================================
+// 2. 预录的结构化 JSON（真实 API 产出）
+// ============================================================
+const DEMO_DATA = {
+  "core_thesis": "大语言模型正在推动人机交互从图形界面（GUI）向对话式界面（CUI）进行根本性转变，两者将长期共存并深度融合",
+  "key_arguments": [
+    {
+      "argument": "对话式交互降低了技术使用门槛，零学习成本特性使其成为最具包容性的交互范式",
+      "original_quote": "用户不再需要学习复杂的软件操作，只需用自然语言描述需求"
+    },
+    {
+      "argument": "LLM 的操作系统级渗透正在重塑软件生态，应用逐步退居为AI助手的后端引擎",
+      "original_quote": "未来操作系统将内置AI助手，应用程序通过自然语言API被调用"
+    },
+    {
+      "argument": "对话式交互带来隐私和安全新挑战，用户意图数据的实时分析需要更严格的治理框架",
+      "original_quote": "对话式交互意味着用户数据需要被实时分析和理解"
+    },
+    {
+      "argument": "企业应从交互层重构、AI可发现性体系和数据治理三方面迎接CUI时代",
+      "original_quote": "开发者要思考如何让AI理解自己应用的能力，即AI可发现性"
+    }
+  ],
+  "supporting_evidence": "Gartner预测到2027年，40%的人机交互将基于对话式AI。ChatGPT两月达1亿用户，创历史增长纪录。Microsoft Copilot、Google Gemini、阿里通义千问已全线嵌入核心产品。Windows 11和Apple Intelligence正将LLM定位为操作系统级交互入口。",
+  "conclusion": "CUI不会取代GUI，两者将深度融合。未来应用同时提供图形和对话两种界面，优秀AI助手能在两种模式间无缝切换，这才是人机交互的真正未来。",
+  "technical_terms": [
+    {"term": "大语言模型", "term_en": "Large Language Model (LLM)", "definition": "基于海量文本数据训练的大规模神经网络，能够理解和生成自然语言"},
+    {"term": "对话式用户界面", "term_en": "Conversational UI (CUI)", "definition": "以自然语言对话为主要交互方式的用户界面范式"},
+    {"term": "AI可发现性", "term_en": "AI Discoverability（推断）", "definition": "AI系统能够理解并调用应用程序功能的能力，类似传统SEO但面向AI"},
+    {"term": "人在环审核", "term_en": "Human-in-the-Loop (HITL)", "definition": "在AI自动化流程中引入人工审核环节以确保输出质量和安全性的机制"}
+  ],
+  "reading_recommendation": {
+    "need_deep_read": true,
+    "reason": "文章涉及影响个人职业发展的技术趋势判断和企业转型建议",
+    "highlight_sections": ["CUI三大核心优势", "LLM作为操作系统级入口", "企业迎接CUI时代的三个方向"]
+  },
+  "metadata": {
+    "article_type": "学术分析"
+  }
+};
+
+// ============================================================
+// 3. 动画播放逻辑
+// ============================================================
+const btn = document.getElementById('demoBtn');
+const statusEl = document.getElementById('demoStatus');
+const statusText = document.getElementById('demoStatusText');
+const resultArea = document.getElementById('demoResult');
+const emptyPanel = document.getElementById('emptyPanel');
+const tokensInfo = document.getElementById('rTokens');
+
+const CARD_IDS = ['cardThesis','cardArgs','cardEvidence','cardConclusion','cardTerms','cardReading'];
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+function renderArgs(container, args) {
+  container.innerHTML = '';
+  if (!args || args.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-hint);font-size:13px">本文无明确论点链</div>';
+    return;
+  }
+  args.forEach((a, i) => {
+    const div = document.createElement('div');
+    div.className = 'argument-item';
+    div.innerHTML = '<div class="argument-header"><span class="argument-num">'+(i+1)+'</span><span class="argument-text">'+esc(a.argument)+'</span></div>'+(a.original_quote ? '<div class="original-quote">'+esc(a.original_quote)+'</div>' : '');
+    container.appendChild(div);
+  });
+}
+
+function renderTerms(container, terms) {
+  container.innerHTML = '';
+  if (!terms || terms.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-hint);font-size:13px">未发现专业术语</div>';
+    return;
+  }
+  terms.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'term-item';
+    const en = t.term_en ? ' ('+esc(t.term_en)+')' : '';
+    d.innerHTML = '<div class="term-name">'+esc(t.term)+en+'</div><div class="term-def">'+esc(t.definition)+'</div>';
+    container.appendChild(d);
+  });
+}
+
+function renderReading(container, rec) {
+  container.innerHTML = '';
+  if (!rec) return;
+  const badge = rec.need_deep_read ? '<div class="reading-badge deep">建议精读</div>' : '<div class="reading-badge skip">可跳过</div>';
+  let html = badge + '<div class="reading-reason">'+esc(rec.reason||'')+'</div>';
+  if (rec.highlight_sections && rec.highlight_sections.length > 0) {
+    html += '<div style="margin-top:6px;font-size:12px;color:var(--text-hint);margin-bottom:4px">重点阅读：</div>';
+    rec.highlight_sections.forEach(s => { html += '<div class="highlight-item">'+esc(s)+'</div>' });
+  }
+  container.innerHTML = html;
+}
+
+function showStatus(type, text, spinner) {
+  statusEl.className = 'demo-status show '+type;
+  statusText.textContent = text;
+  statusEl.querySelector('.demo-spinner').style.display = spinner ? '' : 'none';
+}
+
+function hideStatus() { statusEl.className = 'demo-status'; }
+
+function resetCards() {
+  CARD_IDS.forEach(id => document.getElementById(id).classList.remove('visible'));
+  resultArea.classList.remove('show');
+  tokensInfo.classList.remove('show');
+  tokensInfo.textContent = '';
+}
+
+function playDemo() {
+  btn.disabled = true;
+  resetCards();
+  emptyPanel.style.display = 'none';
+
+  // Phase 1: loading
+  showStatus('loading', '正在提取文章内容...', true);
+  setTimeout(() => {
+    showStatus('loading', 'AI正在思考...', true);
+  }, 1000);
+
+  // Phase 2: show result after 2.5s
+  setTimeout(() => {
+    showStatus('success', '分析完成', false);
+    setTimeout(() => { hideStatus(); }, 800);
+
+    const d = DEMO_DATA;
+    resultArea.classList.add('show');
+
+    // fill content
+    document.getElementById('rThesis').textContent = d.core_thesis;
+    renderArgs(document.getElementById('rArgs'), d.key_arguments);
+    document.getElementById('rEvidence').textContent = d.supporting_evidence;
+    document.getElementById('rConclusion').textContent = d.conclusion;
+    renderTerms(document.getElementById('rTerms'), d.technical_terms);
+    renderReading(document.getElementById('rReading'), d.reading_recommendation);
+
+    if (d.metadata && d.metadata.article_type) {
+      const badge = document.createElement('div');
+      badge.className = 'article-type-badge';
+      badge.textContent = d.metadata.article_type;
+      const concCard = document.getElementById('cardConclusion').querySelector('.card-body');
+      const existing = concCard.querySelector('.article-type-badge');
+      if (existing) existing.remove();
+      concCard.appendChild(badge);
+    }
+
+    tokensInfo.textContent = 'Token 消耗: 3842 (输入 2108, 输出 1734)';
+
+    // Phase 3: staggered card reveal
+    CARD_IDS.forEach((id, i) => {
+      setTimeout(() => {
+        document.getElementById(id).classList.add('visible');
+        if (i === CARD_IDS.length - 1) {
+          setTimeout(() => { tokensInfo.classList.add('show'); }, 300);
+        }
+      }, (i + 1) * 350);
+    });
+
+    setTimeout(() => { btn.disabled = false; }, CARD_IDS.length * 350 + 600);
+  }, 2500);
+}
+
+btn.addEventListener('click', playDemo);
+</script>
+</body>
+</html>
